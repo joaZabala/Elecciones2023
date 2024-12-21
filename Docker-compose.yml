@@ -1,0 +1,56 @@
+services:
+  database-elecciones:
+    container_name: database-elecciones
+    image: mysql:8.0
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_DATABASE: elecciones
+      MYSQL_USER: utn
+      MYSQL_PASSWORD: utn
+      MYSQL_ROOT_PASSWORD: rootpassword
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      parcial2:
+
+  api-elecciones:
+    container_name: api-elecciones
+    image: tupfrcutn/elecciones-2023:1.0.0
+    ports:
+      - "8080:8080"
+    networks:
+      parcial2:
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 10s
+      retries: 5
+
+
+  app-elecciones:
+    container_name: app-elecciones
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+      - "5005:5005"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://database-elecciones:3306/elecciones
+      - SPRING_DATASOURCE_USERNAME=utn
+      - SPRING_DATASOURCE_PASSWORD=utn
+    depends_on:
+      database-elecciones:
+        condition: service_healthy
+    networks:
+      parcial2:
+
+networks:
+  parcial2:
+volumes:
+  mysql_data:
